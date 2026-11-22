@@ -1,0 +1,35 @@
+name: build-id-image
+
+# Builds the custom Fider image (stock v0.40.0 + Indonesian locale) and pushes it to GHCR.
+# Triggered only by pushing a tag like v0.40.0-id1. Not run automatically anywhere yet.
+on:
+  push:
+    tags:
+      - "v0.40.0-id*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            COMMITHASH=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+          tags: ghcr.io/gustiyoga/fider:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
